@@ -1,5 +1,3 @@
-
-// src/layouts/ProfessorLayout.tsx
 import { Outlet, NavLink } from "react-router-dom";
 import { LayoutDashboard, Users, BookOpen, FileText, LogOut } from "lucide-react";
 

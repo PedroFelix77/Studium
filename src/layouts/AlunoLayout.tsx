@@ -1,4 +1,3 @@
-// src/layouts/AlunoLayout.tsx
 import { Outlet, NavLink } from "react-router-dom";
 import { LayoutDashboard, BookOpen, FileText, CalendarCheck, LogOut } from "lucide-react";
 
