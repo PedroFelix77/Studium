@@ -2,14 +2,38 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
-type UserRole = "admin" | "professor" | "aluno" | null;
+export const Roles = {
+  admin: "Administrados",
+  professor: "Professor",
+  aluno: "Aluno",
+} as const;
+
+export type UserRole = keyof typeof Roles | null
 
 interface AuthContextType {
   userRole: UserRole;
-  login: (role: UserRole) => void;
+  login: (role: Exclude<UserRole, null>) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+}
+const AUTH_KEY = "auth";
+
+const authStorage = {
+  get: (): { role?: UserRole } | null => {
+    try{
+      return JSON.parse(localStorage.getItem(AUTH_KEY) || "null")
+    } catch {
+      localStorage.removeItem(AUTH_KEY);
+      return null;
+    }
+  },
+  set: (data: unknown) => {
+    localStorage.setItem(AUTH_KEY, JSON.stringify(data));
+  },
+  clear: () => {
+    localStorage.removeItem(AUTH_KEY)
+  }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,29 +42,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userRole, setUserRole] = useState<UserRole>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
-  const AUTH_KEY = "auth";
-  // TODO-API: defina aqui as chaves/nomes que usará para guardar tokens
-  // ex.: const TOKENS_KEY = "tokens"; const USER_KEY = "user";
 
   useEffect(() => {
-    // TODO-API: restoreSession
-    // 1) Ler tokens do storage (access/refresh)
-    // 2) Se existirem, opcionalmente chamar GET /me para validar e obter o papel do usuário
-    // 3) Se válido, atualizar userRole; se inválido, limpar storage
-    // 4) Ao final, setar isLoading(false)
-    const raw = localStorage.getItem(AUTH_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as { role?: UserRole };
-        if (parsed?.role) {
-          setUserRole(parsed.role);
-        }
-      } catch {
-        // ignorar erros de análise e limpar armazenamento inválido
-        localStorage.removeItem(AUTH_KEY);
-      }
-    }
-    setIsLoading(false);
+    const saved = authStorage.get();
+     if(saved?.role) {
+      setUserRole(saved.role)
+     }
+     setIsLoading(false);    
   }, []);
 
   const login = (role: UserRole) => {
@@ -57,10 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    // TODO-API: logout real
-    // - Opcional: chamar POST /logout (ou revogar refresh token)
-    // - Limpar tokens e quaisquer dados do usuário do storage
-    localStorage.removeItem(AUTH_KEY);
+    authStorage.clear();
     setUserRole(null);
     navigate("/login");
   };
