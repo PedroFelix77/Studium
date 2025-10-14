@@ -25,7 +25,7 @@ import AlunoCurso from "../pages/aluno/Curso";
 import AlunoNotas from "../pages/aluno/Notas";
 import AlunoFrequencia from "../pages/aluno/Frequencia";
 
-import { LoginPage } from "../pages/Login"; 
+import Login from "@/pages/Login"; 
 
 export function AppRoutes() {
   return (
@@ -34,7 +34,7 @@ export function AppRoutes() {
         <Routes>
 
           {/* LOGIN */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Login />} />
 
           {/* ADMIN */}
           <Route
@@ -86,7 +86,7 @@ export function AppRoutes() {
           </Route>
 
           {/* ROTA PADRÃO */}
-          <Route path="*" element={<LoginPage />} />
+          <Route path="*" element={<Login />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
