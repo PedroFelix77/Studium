@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 
 export const Roles = {
   admin: "Administrados",
@@ -10,17 +11,32 @@ export const Roles = {
 
 export type UserRole = keyof typeof Roles | null
 
+interface User {
+  id?: number;
+  name?: string;
+  email?: string;
+  matricula?: string;
+  role: Exclude<UserRole, null>;
+}
+
+interface AuthData {
+  token: string;
+  refresh?: string;
+  user: User;
+}
+
 interface AuthContextType {
+  user: User | null;
   userRole: UserRole;
-  login: (role: Exclude<UserRole, null>) => void;
-  logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  login: (identifier: string, password: string, role: Exclude<UserRole, null>) => Promise<void>;
+  logout: () => void;
 }
 const AUTH_KEY = "auth";
 
 const authStorage = {
-  get: (): { role?: UserRole } | null => {
+  get: (): AuthData | null => {
     try{
       return JSON.parse(localStorage.getItem(AUTH_KEY) || "null")
     } catch {
@@ -28,7 +44,7 @@ const authStorage = {
       return null;
     }
   },
-  set: (data: unknown) => {
+  set: (data: AuthData) => {
     localStorage.setItem(AUTH_KEY, JSON.stringify(data));
   },
   clear: () => {
@@ -39,41 +55,52 @@ const authStorage = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [userRole, setUserRole] = useState<UserRole>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const saved = authStorage.get();
-     if(saved?.role) {
-      setUserRole(saved.role)
+     if(saved?.user) {
+      setUser(saved.user)
      }
      setIsLoading(false);    
   }, []);
 
-  const login = (role: UserRole) => {
-    // TODO-API: login real
-    // - Chamar POST /login com credenciais
-    // - Receber tokens (access/refresh) e possivelmente dados do usuário (role)
-    // - Salvar tokens no storage (ex.: localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens)))
-    // - Se a API não retornar o papel, chamar GET /me para buscá-lo
-    // - Atualizar userRole com o valor vindo da API
-    if (!role) return;
-    localStorage.setItem(AUTH_KEY, JSON.stringify({ role }));
-    setUserRole(role);
-    navigate(`/${role}`);
-  };
+  const login = async (identifier: string, password: string, role: Exclude<UserRole, null>) => {
+    try {
+      const endpoint = 
+      role === "aluno" ? "/api/login/aluno" : "/api/aluno"
+      
+      const payload = 
+      role === "aluno"
+      ? {matricula: identifier, password}
+      : {email : identifier, password}
+
+      const {data} = await axios.post(endpoint, payload)
+
+      const authData: AuthData = data;
+      authStorage.set(authData);
+      setUser(authData.user);
+      navigate(`/${authData.user.role}`);
+    } catch (error) {
+      console.error("Erro ao autenticar:", error)
+      alert("Credenciais inválidas. Verifique seus dados e tente novamente")
+    }
+  }
+  ;
 
   const logout = () => {
     authStorage.clear();
-    setUserRole(null);
+    setUser(null);
     navigate("/login");
   };
 
-  const isAuthenticated = useMemo(() => Boolean(userRole), [userRole]);
+  const userRole: UserRole = user?.role ?? null;
+  const isAuthenticated = useMemo(() => Boolean(user), [user]);
 
   return (
-    <AuthContext.Provider value={{ userRole, login, logout, isAuthenticated, isLoading }}>
+    <AuthContext.Provider value={{ user, userRole, login, logout, isAuthenticated, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
