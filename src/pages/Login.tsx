@@ -1,33 +1,103 @@
-import { useAuth } from "../context/AuthContext";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
+import { useState } from "react"
 
-export function LoginPage() {
-  const { login } = useAuth();
+const loginSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function Login() {
+  const navigate = useNavigate();
+  const { login, userRole, isAuthenticated } = useAuth();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  // redirecionamento automatico após  ologin
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (userRole === "admin") {
+        navigate("/admin");
+      } else if (userRole === "aluno") {
+        navigate("/aluno");
+      }
+    }
+  }, [isAuthenticated, userRole, navigate]);
+
+  const onSubmit = async (data: LoginFormData) => {
+    await login(data.email, data.password);
+  };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-gray-50">
-      <h1 className="text-2xl font-bold mb-6">Acessar o Sistema</h1>
-      <div className="flex gap-4">
-        <button
-          onClick={() => login("admin")}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Entrar como Admin
-        </button>
-        <button
-          onClick={() => login("professor")}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-        >
-          Entrar como Professor
-        </button>
-        <button
-          onClick={() => login("aluno")}
-          className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-        >
-          Entrar como Aluno
-        </button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
+        <h1 className="text-2xl font-semibold text-center mb-6 text-gray-700">
+          Login
+        </h1>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Campo de E-mail */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              E-mail
+            </label>
+            <input
+              type="email"
+              {...register("email")}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Digite seu e-mail"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          {/* Campo de Senha */}
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Senha
+            </label>
+            <input
+              type="password"
+              {...register("password")}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Digite sua senha"
+            />
+            {errors.password && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          {/* Botão de Login */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full py-2 rounded-lg text-white font-semibold transition ${
+              isSubmitting
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
+          >
+            {isSubmitting ? "Entrando..." : "Entrar"}
+          </button>
+        </form>
       </div>
     </div>
   );
 }
-
-export default LoginPage;
