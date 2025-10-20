@@ -139,5 +139,5 @@ export const useAuthProvider = () => {
     }
   }, []);
 
-  return { user, isAuthenticated, login, logout };
+  return { user, isAuthenticated, login, logout, refreshAccessToken };
 };
