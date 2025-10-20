@@ -4,18 +4,18 @@ import axios from "axios";
 
 interface Curso {
   id: number;
-  nome: string;
+  name: string;
 }
 
 interface Turma {
   id: number;
-  nome: string;
+  name: string;
   periodo: string;
 }
 
 interface User {
   id: number;
-  nome: string;
+  name: string;
   role: "admin" | "professor" | "aluno";
   token: string;
   refreshToken: string;
