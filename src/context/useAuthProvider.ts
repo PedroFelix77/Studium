@@ -13,7 +13,7 @@ interface Turma {
   periodo: string;
 }
 
-interface User {
+export interface User {
   id: number;
   name: string;
   role: "admin" | "professor" | "aluno";

@@ -1,103 +1,125 @@
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
-import { useEffect } from "react";
-import { useState } from "react"
-
-const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+import { useState } from "react";
+import { useAuthProvider } from "@/context/useAuthProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { login, userRole, isAuthenticated } = useAuth();
+  const { login } = useAuthProvider();
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
 
-  // redirecionamento automatico após  ologin
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (userRole === "admin") {
-        navigate("/admin");
-      } else if (userRole === "aluno") {
-        navigate("/aluno");
-      }
+    try {
+      await login({ email, senha });
+    } catch (err) {
+      setError("Credenciais inválidas. Verifique e tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [isAuthenticated, userRole, navigate]);
-
-  const onSubmit = async (data: LoginFormData) => {
-    await login(data.email, data.password);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
-        <h1 className="text-2xl font-semibold text-center mb-6 text-gray-700">
-          Login
-        </h1>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Campo de E-mail */}
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
-              E-mail
-            </label>
-            <input
-              type="email"
-              {...register("email")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              placeholder="Digite seu e-mail"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          {/* Campo de Senha */}
-          <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">
-              Senha
-            </label>
-            <input
-              type="password"
-              {...register("password")}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              placeholder="Digite sua senha"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Botão de Login */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full py-2 rounded-lg text-white font-semibold transition ${
-              isSubmitting
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
+    <div
+      className="flex items-center justify-center min-h-screen"
+      style={{ backgroundColor: "rgb(250, 250, 250)" }}
+    >
+      <Card
+        className="w-full max-w-md shadow-lg border"
+        style={{
+          backgroundColor: "white",
+          borderColor: "rgb(209, 218, 235)",
+        }}
+      >
+        <CardHeader>
+          <CardTitle
+            className="text-center text-2xl font-semibold"
+            style={{ color: "rgb(8, 36, 66)" }}
           >
-            {isSubmitting ? "Entrando..." : "Entrar"}
-          </button>
-        </form>
-      </div>
+            Studium — Login
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label
+                htmlFor="email"
+                className="block mb-1 text-sm font-medium"
+                style={{ color: "rgb(8, 36, 66)" }}
+              >
+                E-mail Institucional
+              </label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                placeholder="exemplo@studium.edu.br"
+                onChange={(e) => setEmail(e.target.value)}
+                className="focus-visible:ring-[rgb(16,70,132)]"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="senha"
+                className="block mb-1 text-sm font-medium"
+                style={{ color: "rgb(8, 36, 66)" }}
+              >
+                Senha
+              </label>
+              <Input
+                id="senha"
+                type="password"
+                value={senha}
+                placeholder="••••••••"
+                onChange={(e) => setSenha(e.target.value)}
+                className="focus-visible:ring-[rgb(16,70,132)]"
+              />
+            </div>
+
+            {error && (
+              <p
+                className="text-sm text-center font-medium"
+                style={{ color: "rgb(217, 38, 38)" }}
+              >
+                {error}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full font-semibold text-white transition-colors"
+              style={{
+                backgroundColor: "rgb(16, 70, 132)",
+              }}
+            >
+              {isSubmitting ? (
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+              ) : null}
+              {isSubmitting ? "Entrando..." : "Entrar"}
+            </Button>
+          </form>
+
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <a
+              href="#"
+              className="hover:underline"
+              style={{ color: "rgb(16, 70, 132)" }}
+            >
+              Esqueceu sua senha?
+            </a>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
