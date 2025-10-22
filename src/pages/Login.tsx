@@ -1,24 +1,43 @@
-import { useState } from "react";
-import { useAuthProvider } from "@/context/useAuthProvider";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { ForgotPassword } from "@/components/ForgotPassword";
+import { useState } from "react";
+
+const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "O e-mail é obrigatório")
+    .email("Digite um e-mail válido"),
+  senha: z
+    .string()
+    .min(6, "A senha deve ter pelo menos 6 caracteres")
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { login } = useAuthProvider();
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
+  const { login } = useAuth(); //pega do context
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     setError("");
 
     try {
-      await login({ email, senha });
+      await login({ email: data.email, senha: data.senha });
     } catch (err) {
       setError("Credenciais inválidas. Verifique e tente novamente.");
     } finally {
@@ -48,43 +67,54 @@ export default function Login() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* E-MAIL */}
             <div>
-              <label
+              <Label
                 htmlFor="email"
                 className="block mb-1 text-sm font-medium"
                 style={{ color: "rgb(8, 36, 66)" }}
               >
                 E-mail Institucional
-              </label>
+              </Label>
               <Input
                 id="email"
                 type="email"
-                value={email}
                 placeholder="exemplo@studium.edu.br"
-                onChange={(e) => setEmail(e.target.value)}
+                {...form.register("email")}
                 className="focus-visible:ring-[rgb(16,70,132)]"
               />
+              {form.formState.errors.email && (
+                <p className="text-sm text-red-600 mt-1">
+                  {form.formState.errors.email.message}
+                </p>
+              )}
             </div>
 
+            {/* SENHA */}
             <div>
-              <label
+              <Label
                 htmlFor="senha"
                 className="block mb-1 text-sm font-medium"
                 style={{ color: "rgb(8, 36, 66)" }}
               >
                 Senha
-              </label>
+              </Label>
               <Input
                 id="senha"
                 type="password"
-                value={senha}
                 placeholder="••••••••"
-                onChange={(e) => setSenha(e.target.value)}
+                {...form.register("senha")}
                 className="focus-visible:ring-[rgb(16,70,132)]"
               />
+              {form.formState.errors.senha && (
+                <p className="text-sm text-red-600 mt-1">
+                  {form.formState.errors.senha.message}
+                </p>
+              )}
             </div>
 
+            {/* ERRO GERAL */}
             {error && (
               <p
                 className="text-sm text-center font-medium"
@@ -94,9 +124,10 @@ export default function Login() {
               </p>
             )}
 
+            {/* BOTÃO LOGIN */}
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !form.formState.isValid}
               className="w-full font-semibold text-white transition-colors"
               style={{
                 backgroundColor: "rgb(16, 70, 132)",
@@ -109,15 +140,8 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            <a
-              href="#"
-              className="hover:underline"
-              style={{ color: "rgb(16, 70, 132)" }}
-            >
-              Esqueceu sua senha?
-            </a>
-          </div>
+          {/* 👇 Forgot Password */}
+          <ForgotPassword />
         </CardContent>
       </Card>
     </div>
