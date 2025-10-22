@@ -35,7 +35,7 @@ export const useAuthProvider = () => {
   const [user, setUser] = useState<User | null>(null);
   const isAuthenticated = !!user;
 
-  //Armazena usuário + configura axios globalmente
+  //  Armazena usuário + configura axios globalmente
   const saveAuth = (userData: User) => {
     setUser(userData);
     localStorage.setItem("auth", JSON.stringify(userData));
