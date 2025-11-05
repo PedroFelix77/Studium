@@ -1,0 +1,21 @@
+# ===========================
+# BACKEND (Spring Boot)
+# ===========================
+studium-academico/target/
+studium-academico/.idea/
+studium-academico/.mvn/
+studium-academico/*.iml
+studium-academico/src/main/resources/application.properties
+
+# ===========================
+# FRONTEND (React / Node)
+# ===========================
+studium-front/node_modules/
+studium-front/dist/
+studium-front/.vite/
+
+# ===========================
+# SISTEMA / GERAIS
+# ===========================
+*.log
+*.env
